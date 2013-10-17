@@ -74,7 +74,7 @@ def install_or_upgrade(app_file, app_version, directory_name, version_file, splu
       end
 
       execute "cd #{splunk_dir}/etc/apps; tar -zxvf #{app_file}" do
-        notifies :restart, "service[splunk)"
+        notifies :restart, "service[splunk]"
       end
 
       directory "#{splunk_dir}/etc/apps/#{directory_name}/local" do
