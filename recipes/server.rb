@@ -23,7 +23,7 @@ service "splunk" do
 end
 
 # True for both a Dedicated Search head for Distributed Search and for non-distributed search
-dedicated_search_head = true 
+dedicated_search_head = true
 # Only true if we are a dedicated indexer AND are doing a distributed search setup
 dedicated_indexer = false
 # True only if our public ip matches what we set the master to be
@@ -34,7 +34,7 @@ search_master = ((node['splunk']['dedicated_search_master'] == node['ipaddress']
 splunk_cmd = "#{node['splunk']['server_home']}/bin/splunk"
 splunk_package_version = "splunk-#{node['splunk']['server_version']}-#{node['splunk']['server_build']}"
 
-splunk_file = splunk_package_version + 
+splunk_file = splunk_package_version +
   case node['platform']
   when "centos","redhat","fedora","amazon"
     if node['kernel']['machine'] == "x86_64"
@@ -66,24 +66,28 @@ package splunk_package_version do
 end
 
 if node['splunk']['distributed_search'] == true
-  # Add the Distributed Search Template
-  node.default['splunk']['static_server_configs'] << "distsearch"
-   
-  # We are a search head
-  if node.run_list.include?("role[#{node['splunk']['server_role']}]")
-    search_indexers = search(:node, "role:#{node['splunk']['indexer_role']}")
-    # Add an outputs.conf.  Search Heads should not be doing any indexing
-    node.default['splunk']['static_server_configs'] << "outputs"
-  else
-    dedicated_search_head = false
-  end
+	if Chef::Config[:solo]
+		Chef::Log.warn("This recipe uses search. Chef Solo does not support search.")
+	else
+	  # Add the Distributed Search Template
+	  node.normal['splunk']['static_server_configs'] << "distsearch"
 
-  # we are a dedicated indexer
-  if node.run_list.include?("role[#{node['splunk']['indexer_role']}]")
-    # Find all search heads so we can move their trusted.pem files over
-    search_heads = search(:node, "role:#{node['splunk']['server_role']}")
-    dedicated_indexer = true
-  end
+	  # We are a search head
+	  if node.run_list.include?("role[#{node['splunk']['server_role']}]")
+	    search_indexers = search(:node, "role:#{node['splunk']['indexer_role']}")
+	    # Add an outputs.conf.  Search Heads should not be doing any indexing
+	    node.normal['splunk']['static_server_configs'] << "outputs"
+	  else
+	    dedicated_search_head = false
+	  end
+
+	  # we are a dedicated indexer
+	  if node.run_list.include?("role[#{node['splunk']['indexer_role']}]")
+	    # Find all search heads so we can move their trusted.pem files over
+	    search_heads = search(:node, "role:#{node['splunk']['server_role']}")
+	    dedicated_indexer = true
+	  end
+	end
 end
 
 
@@ -95,7 +99,7 @@ template "#{node['splunk']['server_home']}/etc/splunk-launch.conf" do
 end
 
 if node['splunk']['use_ssl'] == true && dedicated_search_head == true
-  
+
   directory "#{node['splunk']['server_home']}/ssl" do
     owner "root"
     group "root"
@@ -137,7 +141,7 @@ if node['splunk']['ssl_forwarding'] == true
       owner "root"
       group "root"
       mode "0755"
-      notifies :restart, resources(:service => "splunk")
+      notifies :restart, "service[splunk]"
     end
   end
 
@@ -148,15 +152,15 @@ if node['splunk']['ssl_forwarding'] == true
     block do
       inputsPass = `grep -m 1 "password = " #{node['splunk']['server_home']}/etc/system/local/inputs.conf | sed 's/password = //'`
       if inputsPass.match(/^\$1\$/) && inputsPass != node['splunk']['inputsSSLPass']
-        node['splunk']['inputsSSLPass'] = inputsPass
+        node.normal['splunk']['inputsSSLPass'] = inputsPass
         node.save
       end
 
-      if node['splunk']['distributed_search'] == true && dedicated_search_head == true 
+      if node['splunk']['distributed_search'] == true && dedicated_search_head == true
           outputsPass = `grep -m 1 "sslPassword = " #{node['splunk']['server_home']}/etc/system/local/outputs.conf | sed 's/sslPassword = //'`
-        
+
           if outputsPass.match(/^\$1\$/) && outputsPass != node['splunk']['outputsSSLPass']
-            node['splunk']['outputsSSLPass'] = outputsPass
+            node.normal['splunk']['outputsSSLPass'] = outputsPass
             node.save
           end
         end
@@ -172,7 +176,7 @@ execute "#{splunk_cmd} enable boot-start --accept-license --answer-yes" do
 end
 
 splunk_password = node['splunk']['auth'].split(':')[1]
-execute "Changing Admin Password" do 
+execute "Changing Admin Password" do
   command "#{splunk_cmd} edit user admin -password #{splunk_password} -roles admin -auth admin:changeme && echo true > /opt/splunk_setup_passwd"
   not_if do
     File.exists?("/opt/splunk_setup_passwd")
@@ -181,7 +185,7 @@ end
 
 # Enable receiving ports only if we are a standalone installation or a dedicated_indexer
 if dedicated_indexer == true || node['splunk']['distributed_search'] == false
-  execute "Enabling Receiver Port #{node['splunk']['receiver_port']}" do 
+  execute "Enabling Receiver Port #{node['splunk']['receiver_port']}" do
     command "#{splunk_cmd} enable listen #{node['splunk']['receiver_port']} -auth #{node['splunk']['auth']}"
     not_if "grep splunktcp:#{node['splunk']['receiver_port']} #{node['splunk']['server_home']}/etc/system/local/inputs.conf"
   end
@@ -189,7 +193,7 @@ end
 
 if node['splunk']['scripted_auth'] == true && dedicated_search_head == true
   # Be sure to deploy the authentication template.
-  node.default['splunk']['static_server_configs'] << "authentication"
+  node.normal['splunk']['static_server_configs'] << "authentication"
 
   if !node['splunk']['data_bag_key'].empty?
     scripted_auth_creds = Chef::EncryptedDataBagItem.load(node['splunk']['scripted_auth_data_bag_group'], node['splunk']['scripted_auth_data_bag_name'], node['splunk']['data_bag_key'])
@@ -201,7 +205,7 @@ if node['splunk']['scripted_auth'] == true && dedicated_search_head == true
     recursive true
     action :create
   end
-  
+
   node['splunk']['scripted_auth_files'].each do |auth_file|
     cookbook_file "#{node['splunk']['server_home']}/#{node['splunk']['scripted_auth_directory']}/#{auth_file}" do
       source "scripted_auth/#{auth_file}"
@@ -211,7 +215,7 @@ if node['splunk']['scripted_auth'] == true && dedicated_search_head == true
       action :create
     end
   end
-  
+
   node['splunk']['scripted_auth_templates'].each do |auth_templ|
     template "#{node['splunk']['server_home']}/#{node['splunk']['scripted_auth_directory']}/#{auth_templ}" do
       source "server/scripted_auth/#{auth_templ}.erb"
@@ -238,7 +242,7 @@ node['splunk']['static_server_configs'].each do |cfg|
         :dedicated_search_head => dedicated_search_head,
         :dedicated_indexer => dedicated_indexer
       )
-    notifies :restart, resources(:service => "splunk")
+    notifies :restart, "service[splunk]"
   end
 end
 
@@ -248,7 +252,7 @@ node['splunk']['dynamic_server_configs'].each do |cfg|
    	owner "root"
    	group "root"
    	mode "0640"
-    notifies :restart, resources(:service => "splunk")
+    notifies :restart, "service[splunk]"
    end
 end
 
@@ -292,7 +296,7 @@ if node['splunk']['distributed_search'] == true
       block do
         splunk_server_name = `grep -m 1 "serverName = " #{node['splunk']['server_home']}/etc/system/local/server.conf | sed 's/serverName = //'`
         splunk_server_name = splunk_server_name.strip
-      
+
         if File.exists?("#{node['splunk']['server_home']}/etc/auth/distServerKeys/trusted.pem")
           trustedPem = IO.read("#{node['splunk']['server_home']}/etc/auth/distServerKeys/trusted.pem")
           if node['splunk']['trustedPem'] == nil || node['splunk']['trustedPem'] != trustedPem
@@ -310,7 +314,7 @@ if node['splunk']['distributed_search'] == true
   end
 
   if dedicated_indexer == true
-    search_heads.each do |server| 
+    search_heads.each do |server|
       if server['splunk'] != nil && server['splunk']['trustedPem'] != nil && server['splunk']['splunkServerName'] != nil
         directory "#{node['splunk']['server_home']}/etc/auth/distServerKeys/#{server['splunk']['splunkServerName']}" do
           owner "root"
@@ -324,7 +328,7 @@ if node['splunk']['distributed_search'] == true
           mode "0600"
           content server['splunk']['trustedPem'].strip
           action :create
-          notifies :restart, resources(:service => "splunk")
+          notifies :restart, "service[splunk]"
         end
       end
     end

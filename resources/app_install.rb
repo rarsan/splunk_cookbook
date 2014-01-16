@@ -1,4 +1,5 @@
 actions :create_if_missing
+default_action :create_if_missing
 
 attribute :app_file,                :kind_of => String
 attribute :app_version,             :kind_of => String

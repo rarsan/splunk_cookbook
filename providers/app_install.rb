@@ -24,20 +24,20 @@ action :create_if_missing do
     local_templates = @new_resource.local_templates
     local_templates_directory = @new_resource.local_templates_directory
     remove_dir = @new_resource.remove_dir_on_upgrade
-    
+
     if node.run_list.roles.include?(node['splunk']['server_role'])
       splunk_dir = node['splunk']['server_home']
     else
       splunk_dir = node['splunk']['forwarder_home']
     end
-    
+
     directory_name = app_file.split(".")[0]
     version_file = "#{splunk_dir}/#{directory_name}.app.#{app_version}"
-   
+
     install_required_dependencies(required_dependencies)
-    
+
     install_or_upgrade(app_file, app_version, directory_name, version_file, splunk_dir, remove_dir)
-    
+
     move_local_templates(local_templates, local_templates_directory, directory_name, splunk_dir)
     new_resource.updated_by_last_action(true)
 end
@@ -55,7 +55,7 @@ def install_required_dependencies(required_dependencies)
 end
 
 def install_or_upgrade(app_file, app_version, directory_name, version_file, splunk_dir, remove_dir)
-   
+
     if ::File.exists?(version_file) == false
 
       if ::File.directory?("#{splunk_dir}/etc/apps/#{directory_name}") == true
@@ -74,7 +74,7 @@ def install_or_upgrade(app_file, app_version, directory_name, version_file, splu
       end
 
       execute "cd #{splunk_dir}/etc/apps; tar -zxvf #{app_file}" do
-        notifies :restart, resources(:service => "splunk")
+        notifies :restart, "service[splunk]"
       end
 
       directory "#{splunk_dir}/etc/apps/#{directory_name}/local" do
@@ -86,21 +86,21 @@ def install_or_upgrade(app_file, app_version, directory_name, version_file, splu
         content app_version
       end
     end
-    
+
 end
 
 def move_local_templates(local_templates, local_templates_directory, directory_name, splunk_dir)
   if !local_templates.nil? && !local_templates_directory.nil?
     local_templates.each do |templ|
-       
+
        template "#{splunk_dir}/etc/apps/#{directory_name}/local/#{templ.split(".erb")[0]}" do
         	source "apps/#{local_templates_directory}/#{templ}"
         	owner "root"
         	group "root"
         	mode "0640"
-        	notifies :restart, resources(:service => "splunk")
+       		notifies :restart, "service[splunk]"
        end
-       
+
     end
   end
 end

@@ -1,7 +1,7 @@
 #
 # Cookbook Name:: splunk
 # Recipe:: forwarder
-# 
+#
 # Copyright 2011-2012, BBY Solutions, Inc.
 # Copyright 2011-2012, Opscode, Inc.
 #
@@ -26,9 +26,9 @@ end
 splunk_cmd = "#{node['splunk']['forwarder_home']}/bin/splunk"
 splunk_package_version = "splunkforwarder-#{node['splunk']['forwarder_version']}-#{node['splunk']['forwarder_build']}"
 
-splunk_file = splunk_package_version + 
+splunk_file = splunk_package_version +
   case node['platform']
-  when "centos","redhat","fedora"
+  when "centos","redhat","fedora","amazon"
     if node['kernel']['machine'] == "x86_64"
       "-linux-2.6-x86_64.rpm"
     else
@@ -94,14 +94,14 @@ if node['splunk']['ssl_forwarding'] == true
     group "root"
     action :create
   end
-  
+
   [node['splunk']['ssl_forwarding_cacert'],node['splunk']['ssl_forwarding_servercert']].each do |cert|
     cookbook_file "#{node['splunk']['forwarder_home']}/etc/auth/forwarders/#{cert}" do
       source "ssl/forwarders/#{cert}"
       owner "root"
       group "root"
       mode "0755"
-      notifies :restart, resources(:service => "splunk")
+      notifies :restart, "service[splunk]"
     end
   end
 
@@ -112,9 +112,11 @@ if node['splunk']['ssl_forwarding'] == true
     block do
       outputsPass = `grep -m 1 "sslPassword = " #{node['splunk']['forwarder_home']}/etc/system/local/outputs.conf | sed 's/sslPassword = //'`
       if outputsPass.match(/^\$1\$/) && outputsPass != node['splunk']['outputsSSLPass']
-        node['splunk']['outputsSSLPass'] = outputsPass
-        node.save
+        node.default['splunk']['outputsSSLPass'] = outputsPass
       end
+    end
+    only_if do
+      File.exists?("#{node['splunk']['forwarder_home']}/etc/system/local/outputs.conf")
     end
   end
 end
@@ -125,7 +127,7 @@ template "#{node['splunk']['forwarder_home']}/etc/system/local/outputs.conf" do
 	group "root"
 	mode "0644"
 	variables :splunk_servers => splunk_servers
-	notifies :restart, resources(:service => "splunk")
+	notifies :restart, "service[splunk]"
 end
 
 ["limits"].each do |cfg|
@@ -134,23 +136,17 @@ end
    	owner "root"
    	group "root"
    	mode "0640"
-    notifies :restart, resources(:service => "splunk")
+    notifies :restart, "service[splunk]"
    end
 end
 
-# Find the inputs file to move.  There will be the default and then we will over-write it as necessary
-node.cookbook_collection[node['splunk']['cookbook_name']].template_filenames.each do |filename|
- inputsfile = "forwarder/#{node['splunk']['forwarder_config_folder']}/#{node['splunk']['forwarder_role']}.inputs.conf.erb"
- if inputsfile == filename
-   template "Moving inputs file for role: #{node['splunk']['forwarder_role']}" do
- 	    path "#{node['splunk']['forwarder_home']}/etc/system/local/inputs.conf"
-	    source inputsfile
-      owner "root"
-      group "root"
-      mode "0640"
-      notifies :restart, resources(:service => "splunk")
-    end
-  end
+template "Moving inputs file for role: #{node['splunk']['forwarder_role']}" do
+  path "#{node['splunk']['forwarder_home']}/etc/system/local/inputs.conf"
+  source "forwarder/#{node['splunk']['forwarder_config_folder']}/#{node['splunk']['forwarder_role']}.inputs.conf.erb"
+  owner "root"
+  group "root"
+  mode "0640"
+  notifies :restart, "service[splunk]"
 end
 
 

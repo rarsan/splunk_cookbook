@@ -1,3 +1,4 @@
+name             "splunk"
 maintainer       "BBY Solutions, Inc."
 maintainer_email "andrew.painter@bestbuy.com"
 license          "Apache 2.0"
