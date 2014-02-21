@@ -1,9 +1,7 @@
-name             "splunk"
-maintainer       "BBY Solutions, Inc."
-maintainer_email "andrew.painter@bestbuy.com"
-license          "Apache 2.0"
-description      "Installs/Configures a Splunk Server, Forwarders, and Apps"
-version          "0.1.0"
-%w{redhat centos fedora debian ubuntu}.each do |os|
-  supports os
-end
+name             'splunk'
+maintainer       'BBY Solutions, Inc.'
+maintainer_email 'Andrew.Painter@bestbuy.com'
+license          'Apache 2.0'
+description      'Installs/Configures splunk'
+long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
+version          '1.0.16'
