@@ -42,7 +42,7 @@ module SplunkHelpers
     "#{root}/#{version}/" + (install_type == 'server' ? 'splunk' : 'universalforwarder') + "/linux/#{file}"
   end
 
-  def splunk_home(type, beta)
+  def splunk_home(type)
     if type == 'server'
       return '/opt/splunk'
     else

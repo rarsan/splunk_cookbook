@@ -1,0 +1,12 @@
+<% @base.each_pair do |index, conf| -%>
+<% if conf.kind_of?(String) -%>
+ <%= index %> = <%= conf %>
+<% else -%>
+[<%= index %>]
+ <% conf.each_pair do |option, val| -%>
+  <% if val != "" -%>
+<%= option %> = <%= val %>
+  <% end -%>
+ <% end -%>
+<% end -%>
+<% end -%>

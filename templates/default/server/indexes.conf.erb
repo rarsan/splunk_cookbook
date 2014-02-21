@@ -1,9 +1,0 @@
-<% node['splunk']['indexes'].each_pair do |index, conf| -%>
-[<%= index %>]
- <% conf.each_pair do |option, val| -%>
-	<% if val != "" -%>
-<%= option %> = <%= val %>
-	<% end -%>
- <% end -%>
- 
-<% end -%>

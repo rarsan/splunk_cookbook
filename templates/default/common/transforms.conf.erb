@@ -1,0 +1,71 @@
+## This is the base transforms.conf that is share across all environments
+## From http://splunk-base.splunk.com/answers/3470/consolidate-similarly-named-log-files-into-a-single-source
+
+[source_clean-YYYY-MM-DD]
+# Remove 'YYYY-MM-DD' or 'YYYY_MM_DD' style date from the filename
+#   catalina.2009-09-17.log     --> catalina.log
+#   quartz-xyz.log.2009-07-08   --> quartz-xyz.log
+#   xyz.log.2009-07-15          --> xyz.log
+#   xyz_2010-01-01.log          --> xyz.log
+#   info_012345_2010_08_17.txt  --> info_012345.txt
+DEST_KEY   = MetaData:Source
+SOURCE_KEY = MetaData:Source
+REGEX    = source::(.*)([-._ ]\d{4}([-_])\d\d\3\d\d)(|\D.*)$
+FORMAT   = source::$1$4
+
+
+[source_drop-YYYYMMDD]
+# Remove a 'YYYYMMDD' style date from the filename
+#   jakarta_service_20091007.log --> jakarta_service.log
+#   jakarta_service.log_20091007 --> jakarta_service.log
+#   jakarta_service.log.20091007 --> jakarta_service.log
+#   jakarta_service.log-20091007 --> jakarta_service.log
+DEST_KEY   = MetaData:Source
+SOURCE_KEY = MetaData:Source
+REGEX    = source::(.*)([-._ ]\d{8})(|\D.*)$
+FORMAT   = source::$1$3
+
+
+[source_clean-beginning-YYYY-MM-DD]
+# Remove a 'YYYY-MM-DD' or 'YYYY_MM_DD' style from the beginning of a filename
+DEST_KEY  = MetaData:Source
+SOURCE_KEY  = MetaData:Source
+REGEX   = (\d{4}([-_])\d{2}([-_])\d{2})(.*)$
+FORMAT    = source::$4
+
+[source_clean-trailing-digits]
+# Remove any trailing digits from a filename
+#   syslog.3 --> syslog
+#   server.log.12345 --> server.log
+#   access_log.1262174400 --> access_log
+DEST_KEY   = MetaData:Source
+SOURCE_KEY = MetaData:Source
+REGEX    = source::(.*)[-._]\d+$
+FORMAT   = source::$1
+
+
+[source_clean-digits-before-ext]
+# Remove any trailing digits from a filename
+#   server.12345.log      --> server.log
+#   access-1262174400_log --> access_log
+DEST_KEY   = MetaData:Source
+SOURCE_KEY = MetaData:Source
+REGEX    = source::(.*)[-._]\d+([._][a-zA-Z]+)$
+FORMAT   = source::$1$2
+
+[source_clean-remove-gz]
+# Remove a file extension of .gz
+#
+DEST_KEY  = MetaData:Source
+SOURCE_KEY  = MetaData:Source
+REGEX   = source::(.*)([._]gz)$
+FORMAT    = source::$1
+
+#
+[source_clean-ip-in-log]
+# Remove any ip-###-###-###-### from a log file
+DEST_KEY  = MetaData:Source
+SOURCE_KEY  = MetaData:Source
+REGEX   = source::(.*)(-ip-\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})([._][a-zA-Z]+)$
+FORMAT    = source::$1$3
+

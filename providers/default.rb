@@ -5,7 +5,7 @@ use_inline_resources if defined?(use_inline_resources)
 
 action :install do
   @install_type = @new_resource.install_type
-  @base_dir = splunk_home(@install_type, node['splunk']['beta'])
+  @base_dir = splunk_home(@install_type)
   @distributed_search = @new_resource.distributed_search
   @scripted_auth = @new_resource.scripted_auth
   @dedicated_indexer = node['splunk']['dedicated_indexer']

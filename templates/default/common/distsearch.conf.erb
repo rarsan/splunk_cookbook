@@ -1,0 +1,20 @@
+<% unless @dedicated_indexer -%>
+[distributedSearch]
+servers = <%= @indexers.sort.join(':8089,') + ':8089' %>
+useSHPBundleReplication = true
+shareBundles = true
+
+[tokenExchKeys]
+certDir = $SPLUNK_HOME/etc/auth/distServerKeys
+publicKey = trusted.pem
+privateKey = private.pem
+
+<% else -%>
+
+<% @search_heads.each_with_index do |server, index| -%>
+[searchhead:<%= server['splunk']['splunkServerName']%>]
+mounted_bundles = true
+bundles_location = <%= node['splunk']['search_head_pool_directory']%>
+<% end -%>
+
+<% end -%>
