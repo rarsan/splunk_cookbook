@@ -21,15 +21,16 @@ default['splunk']['conf']['server']['web'] = {
   'settings' => {
     'startwebserver' =>  (node['splunk']['distributed_search'] && !node['splunk']['dedicated_indexer']) || !node['splunk']['distributed_search'] ? '1' : '0',
     'httpport' => '443',
-    'enableSplunkWebSSL' => 'true',
-    'privKeyPath' => "ssl/#{node['splunk']['ssl_key']}",
-    'caCertPath' => "ssl/#{node['splunk']['ssl_crt']}",
+    'enableSplunkWebSSL' => node['splunk']['web_ssl'],
     'ui_inactivity_timeout' => '0',
     'minify_js' => true,
     'minify_css' => true,
     'root_endpoint' => node['splunk']['root_endpoint']
   }
 }
+
+default['splunk']['conf']['server']['web']['settings']['privKeyPath'] = "ssl/#{node['splunk']['ssk_key']}" if node['splunk']['web_ssl']
+default['splunk']['conf']['server']['web']['settings']['caCertPath'] = "ssl/#{node['splunk']['ssk_key']}" if node['splunk']['web_ssl']
 
 ################
 # indexes.conf #

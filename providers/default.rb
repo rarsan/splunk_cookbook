@@ -85,7 +85,9 @@ def base_files
   end
 
   execute "#{base_dir}/bin/splunk enable listen #{node['splunk']['receiver_port']} -auth #{node['splunk']['auth']}" do
-    not_if "grep #{node['splunk']['receiver_port']} #{base_dir}/etc/system/local/inputs.conf"
+    not_if do
+      ::TCPSocket.new('0.0.0.0', node['splunk']['receiver_port'])
+    end
     only_if do
       (dedicated_indexer == true || distributed_search == false) && install_type == 'server'
     end
