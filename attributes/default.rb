@@ -1,44 +1,42 @@
-# Name of the cookbook (referenced in forwarder.rb)
-default['splunk']['cookbook_name']             = "splunk"
+default['splunk']['db_directory']                 = '/volr/splunk'
+default['splunk']['auth']                         = 'admin:SomePassword123'
+default['splunk']['install_type']                 = 'server'
+default['splunk']['receiver_port']                = 9997
 
-#directories
-default['splunk']['server_home']               = "/opt/splunk"
-default['splunk']['db_directory']              = "/volr/splunk"
+default['splunk']['configs']['server']            = ['inputs']
+default['splunk']['configs']['forwarder']         = ['outputs']
+default['splunk']['env_configs']['server']        = %w{props transforms}
+default['splunk']['env_configs']['forwarder']     = ['forwarder_inputs']
 
-#web config
-default['splunk']['web_server_port']           = "80" # Change to 443/other if you're doing ssl
-default['splunk']['root_endpoint']             = "/" # Web Endpoint
-default['splunk']['browser_timeout']           = "0"
-default['splunk']['minify_js']                 = "true"
-default['splunk']['minify_css']                = "true"
+default['splunk']['env']                          = 'prodlike'
+default['splunk']['indexers']                     = []
 
-default['splunk']['use_ssl']                   = false
-default['splunk']['ssl_crt']                   = "ssl.crt"
-default['splunk']['ssl_key']                   = "ssl.key"
+default['splunk']['distributed_search']           = false
+default['splunk']['dedicated_indexer']            = false
 
-# Dashboards to deploy
-default['splunk']['deploy_dashboards']         = true
-default['splunk']['dashboards_to_deploy']      = ["apache_http","useragents"]
+default['splunk']['use_license_master']           = false
+default['splunk']['license_master']               = '127.0.0.1' # license master IP
 
+default['splunk']['deploy_dashboards']            = false
+default['splunk']['dashboards']                   = [] # array of dashboards
 
-default['splunk']['server_config_folder']      = "prodlike"
+default['splunk']['scripted_auth']                = false
+default['splunk']['scripted_auth_directory']      = 'etc/system/scripted_auth'
+default['splunk']['scripted_auth_script']         = '' # main auth script
+default['splunk']['scripted_auth_files']          = [] # files located under files/default/scripted_auth
+default['splunk']['scripted_auth_templates']      = [] # files under templates/default/scripted_auth
 
-# Static Server Configs (Configs that match regardless of environment -Dev,QA,PL,Prod,Etc)
-default['splunk']['static_server_configs']     = ["web","transforms","limits","indexes"]
+default['splunk']['scripted_auth_data_bag_group'] = 'data_bag_group'
+default['splunk']['scripted_auth_data_bag_name']  = 'data_bag_name'
+default['splunk']['data_bag_key']                 = 'data_bag_secret'
 
-# Dynamic Server Configs (Configs that change per environment)
-default['splunk']['dynamic_server_configs']    = ["inputs","props"]
+# Use SSL for the web interface
+default['splunk']['web_ssl']    = true
 
-#configuration values for forwarders
-default['splunk']['receiver_port']             = "9997"
+default['splunk']['ssl_crt'] = 'ssl.crt'
+default['splunk']['ssl_key'] = 'ssl.key'
 
-#Change the default admin password (Username::Password)
-default['splunk']['auth']                      = "admin:SomePassword123"
+default['splunk']['server_role']   = 'splunk-server-role' # role cookbook or role name for the server
+default['splunk']['root_endpoint'] = '/'
 
-# Set the role of your splunk server/dedicated search head
-default['splunk']['server_role']               = "splunk-server"
-# Needed for distributed search.  This is assigned to the indexers.
-default['splunk']['indexer_role']              = "splunk-indexer"
-
-# limits.conf 
-default['splunk']['max_searches_per_cpu']      = 4
+default['splunk']['search_head_pool_directory'] = '/opt/splunk_shared_bundles' # for splunk shared bundles
