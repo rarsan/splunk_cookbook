@@ -7,6 +7,7 @@ default['splunk']['db_directory']              = "/volr/splunk"
 
 #web config
 default['splunk']['web_server_port']           = "80" # Change to 443/other if you're doing ssl
+default['splunk']['mgmt_server_port']          = "8089"
 default['splunk']['root_endpoint']             = "/" # Web Endpoint
 default['splunk']['browser_timeout']           = "0"
 default['splunk']['minify_js']                 = "true"

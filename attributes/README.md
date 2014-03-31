@@ -41,6 +41,8 @@ default
 
 * `node['splunk']['web_server_port']` - The port number to assign the web server (httpport).
 	- File location: templates/server/web.conf.erb
+* `node['splunk']['mgmt_server_port']` - The port number to assign the splunkd management (port in mgmtHostPort).
+	- File location: templates/server/web.conf.erb
 * `node['splunk']['root_endpoint']` - The endpoint for the splunk web instance
 * `node['splunk']['browser_timeout']` - The inactivity timeout (ui_inactivity_timeout).
 	- File location: templates/server/web.conf.erb
