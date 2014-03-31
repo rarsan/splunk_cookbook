@@ -17,10 +17,12 @@ default['splunk']['use_ssl']                   = false
 default['splunk']['ssl_crt']                   = "ssl.crt"
 default['splunk']['ssl_key']                   = "ssl.key"
 
+#license path
+default['splunk']['license_path']              = ""
+
 # Dashboards to deploy
 default['splunk']['deploy_dashboards']         = true
 default['splunk']['dashboards_to_deploy']      = ["apache_http","useragents"]
-
 
 default['splunk']['server_config_folder']      = "prodlike"
 
@@ -30,16 +32,22 @@ default['splunk']['static_server_configs']     = ["web","transforms","limits","i
 # Dynamic Server Configs (Configs that change per environment)
 default['splunk']['dynamic_server_configs']    = ["inputs","props"]
 
-#configuration values for forwarders
+# Configuration values for forwarders
 default['splunk']['receiver_port']             = "9997"
 
-#Change the default admin password (Username::Password)
-default['splunk']['auth']                      = "admin:SomePassword123"
+# Change the default admin password (Username::Password)
+default['splunk']['auth']                      = "admin:changeme"
 
 # Set the role of your splunk server/dedicated search head
 default['splunk']['server_role']               = "splunk-server"
 # Needed for distributed search.  This is assigned to the indexers.
 default['splunk']['indexer_role']              = "splunk-indexer"
+# Role for cluster search head
+default['splunk']['cluster_search_role']       = 'cluster-search-head'
+# Role for cluster master node
+default['splunk']['cluster_master_role']       = 'cluster-master'
+# Role for cluster peer node
+default['splunk']['cluster_indexer_role']      = 'cluster-peer'
 
 # limits.conf 
 default['splunk']['max_searches_per_cpu']      = 4

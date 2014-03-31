@@ -1,5 +1,5 @@
 [settings]
-startwebserver = <% if @dedicated_search_head == true -%>1<% else -%>0<% end -%>
+startwebserver = <% if @dedicated_search_head || @cluster_master || @cluster_search_head -%>1<% else -%>0<% end -%>
 httpport = <%= node['splunk']['web_server_port'] %>
 mgmtHostPort = 127.0.0.1:<%= node['splunk']['mgmt_server_port'] %>
 enableSplunkWebSSL = <%= node['splunk']['use_ssl'] %>  

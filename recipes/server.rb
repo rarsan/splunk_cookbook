@@ -22,10 +22,17 @@ service "splunk" do
   supports  :status => true, :start => true, :stop => true, :restart => true
 end
 
-# True for both a Dedicated Search head for Distributed Search and for non-distributed search
+# True for both a standalone install OR dedicated search head for distributed search
 dedicated_search_head = true
 # Only true if we are a dedicated indexer AND are doing a distributed search setup
 dedicated_indexer = false
+# Only true if we are a cluster search head AND are doing a cluster setup
+cluster_search_head = false
+# Only true if we are a cluster master AND are doing a cluster setup
+cluster_master = false
+# Only true if we are a cluster peer node AND are doing a cluster setup
+cluster_peer = false
+
 # True if our public ip matches what we set the license master to be or if specifically designated as such
 license_master = ( node['splunk']['dedicated_license_master'] == node['ipaddress'] ||
                    node['splunk']['is_dedicated_license_master']  == true ) ? true : false
@@ -89,6 +96,33 @@ if node['splunk']['distributed_search'] == true
 	end
 end
 
+if node['splunk']['cluster_deployment'] == true
+  if Chef::Config[:solo]
+    Chef::Log.warn("This recipe uses search. Chef Solo does not support search.")
+  else
+    # Disable dedicated search head which is the default
+    dedicated_search_head = false
+
+    # Only one of the following must be true if we are a cluster-related node
+    cluster_search_head = node.run_list.include?("role[#{node['splunk']['cluster_search_role']}]")
+    cluster_peer = node.run_list.include?("role[#{node['splunk']['cluster_indexer_role']}]")
+    cluster_master = node.run_list.include?("role[#{node['splunk']['cluster_master_role']}]")
+
+    clustering_mode = cluster_master ? 'master' : (cluster_peer ? 'peer' : 'search-head')
+    Chef::Log.info("Current node clustering mode: #{clustering_mode}")
+
+    # Add Server Config template
+    #node.normal['splunk']['static_server_configs'] << "server"
+
+    cluster_master_node = search(:node, "role:#{node['splunk']['cluster_master_role']}")
+    if cluster_master_node.kind_of? Array
+      cluster_master_node = cluster_master_node.last
+      if cluster_master_node
+        Chef::Log.info("Found clustering master: #{cluster_master_node['ipaddress']}")
+      end
+    end
+  end
+end
 
 template "#{node['splunk']['server_home']}/etc/splunk-launch.conf" do
     source "server/splunk-launch.conf.erb"
@@ -124,7 +158,6 @@ if node['splunk']['use_ssl'] == true && dedicated_search_head == true
 end
 
 if node['splunk']['ssl_forwarding'] == true
-
   # Create the SSL Cert Directory for the Forwarders
   directory "#{node['splunk']['server_home']}/etc/auth/forwarders" do
     owner "root"
@@ -167,6 +200,7 @@ if node['splunk']['ssl_forwarding'] == true
   end
 end
 
+# Enable splunk
 execute "#{splunk_cmd} enable boot-start --accept-license --answer-yes" do
   not_if do
     File.symlink?('/etc/rc3.d/S20splunk') ||
@@ -174,6 +208,7 @@ execute "#{splunk_cmd} enable boot-start --accept-license --answer-yes" do
   end
 end
 
+# Change password
 splunk_password = node['splunk']['auth'].split(':')[1]
 execute "Changing Admin Password" do
   command "#{splunk_cmd} edit user admin -password #{splunk_password} -roles admin -auth admin:changeme && echo true > /opt/splunk_setup_passwd"
@@ -182,8 +217,19 @@ execute "Changing Admin Password" do
   end
 end
 
-# Enable receiving ports only if we are a standalone installation or a dedicated_indexer
-if dedicated_indexer == true || node['splunk']['distributed_search'] == false
+# Add enterprise license if one specified
+if node['splunk']['license_path'] != ""
+  execute "Adding Enterprise License #{node['splunk']['license_path']}" do
+    command "#{splunk_cmd} add licenses #{node['splunk']['license_path']} -auth #{node['splunk']['auth']} && echo true > /opt/splunk_setup_license"
+    ignore_failure true
+    not_if do
+      File.exists?("/opt/splunk_setup_license")
+    end
+  end
+end
+
+# Enable receiving ports only if we are a dedicated indexer or a cluster peer node, or a standalone installation
+if dedicated_indexer == true || cluster_peer == true || (node['splunk']['cluster_deployment'] == false && node['splunk']['distributed_search'] == false)
   execute "Enabling Receiver Port #{node['splunk']['receiver_port']}" do
     command "#{splunk_cmd} enable listen #{node['splunk']['receiver_port']} -auth #{node['splunk']['auth']}"
     not_if "grep splunktcp:#{node['splunk']['receiver_port']} #{node['splunk']['server_home']}/etc/system/local/inputs.conf"
@@ -236,10 +282,16 @@ node['splunk']['static_server_configs'].each do |cfg|
    	group "root"
    	mode "0640"
     variables(
+        # set of nodes
         :search_heads => search_heads,
         :search_indexers => search_indexers,
+        :cluster_master_node => cluster_master_node,
+        # set of booleans
         :dedicated_search_head => dedicated_search_head,
-        :dedicated_indexer => dedicated_indexer
+        :dedicated_indexer => dedicated_indexer,
+        :cluster_search_head => cluster_search_head,
+        :cluster_master => cluster_master,
+        :cluster_peer => cluster_peer
       )
     notifies :restart, "service[splunk]"
   end
@@ -279,19 +331,34 @@ if node['splunk']['deploy_dashboards'] == true
   end
 end
 
-if node['splunk']['distributed_search'] == true
-  # We are not the search master.. we need to link up to the master for our license information
-  if search_master == false
-    execute "Linking license to search master" do
-      command "#{splunk_cmd} edit licenser-localslave -master_uri 'https://#{node['splunk']['dedicated_search_master']}:8089' -auth #{node['splunk']['auth']}"
-      not_if "grep \"master_uri = https://#{node['splunk']['dedicated_search_master']}:8089\" #{node['splunk']['server_home']}/etc/system/local/server.conf"
-      notifies :restart, resources(:service => "splunk")
+# Link to license master (if any) in distributed environment
+if node['splunk']['cluster_deployment'] == true || node['splunk']['distributed_search'] == true
+  # We are not the license master.. we need to link up to the master for our license information
+  license_master_ip = ''
+  if license_master == false
+    if node['splunk']['dedicated_license_master'] != ''
+      license_master_ip = node['splunk']['dedicated_license_master']
+    else
+      license_master_node = search(:node, "is_dedicated_license_master:true").first
+      license_master_ip = license_master_node['ipaddress']
+    end
+
+    if license_master_ip != ''
+      Chef::Log.info("Link up with license master: #{license_master_ip}")
+      execute "Linking splunk license to license master" do
+        command "#{splunk_cmd} edit licenser-localslave -master_uri 'https://#{license_master_ip}:8089' -auth #{node['splunk']['auth']}"
+        retries 5
+        ignore_failure true
+        notifies :restart, resources(:service => "splunk")
+      end
     end
   end
+end
 
+if node['splunk']['distributed_search'] == true
   if dedicated_search_head == true
     # We save this information so we can reference it on indexers.
-    ruby_block "Splunk Server - Saving Info" do
+    ruby_block "Splunk Dedicated Search Head - Saving Info" do
       block do
         splunk_server_name = `grep -m 1 "serverName = " #{node['splunk']['server_home']}/etc/system/local/server.conf | sed 's/serverName = //'`
         splunk_server_name = splunk_server_name.strip

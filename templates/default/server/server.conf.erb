@@ -1,0 +1,20 @@
+[general]
+serverName = <%= node['ipaddress'] %>
+allowRemoteLogin = always
+
+<% if @cluster_search_head || @cluster_master || @cluster_peer -%>
+[clustering]
+<% if @cluster_master -%>
+mode = master
+replication_factor = <%= node['splunk']['replication_factor'] %>
+search_factor = <%= node['splunk']['search_factor'] %>
+<% else -%>
+master_uri = <%= "https://#{@cluster_master_node['ipaddress']}:#{@cluster_master_node['splunk']['mgmt_server_port']}" %>
+mode = <%= (@cluster_peer) ? 'peer' : 'searchhead' %>
+<% end -%>
+pass4SymmKey = <%= node['splunk']['pass4SymmKey'] %>
+
+<% if @cluster_peer -%>
+[replication_port://<%= node['splunk']['replication_port'] %>]
+<% end -%>
+<% end -%>

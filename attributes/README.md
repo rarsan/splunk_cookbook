@@ -75,8 +75,11 @@ default
 
 * `node['splunk']['auth']` - The default admin password to use instead of splunks "changeme"
 
-* `node['splunk']['server_role']` - The role name of the splunk standalone install / dedicated search head.  Forwarders will search for this role in order to identify the server in which to send the data.
-* `node['splunk']['indexer_role']` - The role name of the splunk indexer if using dedicated searching
+* `node['splunk']['server_role']` - The role name of the splunk standalone install / dedicated search head.  In case of standalone install, Forwarders will search for this role in order to identify the server to which send the data.
+* `node['splunk']['indexer_role']` - The role name of the splunk indexer if using dedicated indexer(s), i.e. distributed search. Forwarders will search for this role in order to identify the server(s) to which send the data.
+* `node['splunk']['cluster_search_role']` - The role name of the cluster search head in clustering mode.
+* `node['splunk']['cluster_master_role']` - The role name of the cluster master in clustering mode.
+* `node['splunk']['cluster_indexer_role']` - The role name of the cluster peer node in clustering mode. Forwarders will search for this role in order to identify the server(s) to which send the data.
 
 * `node['splunk']['max_searches_per_cpu']` - The max searches per cpu (limits.conf)
 
@@ -86,6 +89,14 @@ distributed_search
 * `node['splunk']['distributed_search']` - Enable/Disable distributed search
 * `node['splunk']['distributed_license_master']` - The local IP of the License Master
 * `node['splunk']['is_dedicated_license_master']` - Designates as dedicated license master - will ignore above IP attribute
+
+clustering
+----------
+* `node['splunk']['cluster_deployment']` - Enable/Disable distributed splunk cluster
+* `node['splunk']['replication_factor']` - The clustering replication factor
+* `node['splunk']['search_factor']` - The clustering search factor
+* `node['splunk']['pass4SymmKey']` - The default secret key for communication authentication in clustering mode
+* `node['splunk']['replication_port']` - The peer replication port for cluster peer nodes
 
 forwarder
 ---------
