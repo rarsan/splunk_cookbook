@@ -34,8 +34,8 @@ cluster_master = false
 cluster_peer = false
 
 # True if our public ip matches what we set the license master to be or if specifically designated as such
-license_master = ( node['splunk']['dedicated_license_master'] == node['ipaddress'] ||
-                   node['splunk']['is_dedicated_license_master']  == true ) ? true : false
+license_master = ( node['splunk']['license_master'] == node['ipaddress'] ||
+                   node['splunk']['is_license_master']  == true ) ? true : false
 
 splunk_cmd = "#{node['splunk']['server_home']}/bin/splunk"
 splunk_package_version = "splunk-#{node['splunk']['server_version']}-#{node['splunk']['server_build']}"
@@ -334,12 +334,12 @@ end
 # Link to license master (if any) in distributed environment
 if node['splunk']['cluster_deployment'] == true || node['splunk']['distributed_search'] == true
   # We are not the license master.. we need to link up to the master for our license information
-  license_master_ip = ''
   if license_master == false
-    if node['splunk']['dedicated_license_master'] != ''
-      license_master_ip = node['splunk']['dedicated_license_master']
+    license_master_ip = ''
+    if node['splunk']['license_master'] != ''
+      license_master_ip = node['splunk']['license_master']
     else
-      license_master_node = search(:node, "is_dedicated_license_master:true").first
+      license_master_node = search(:node, "is_license_master:true").first
       license_master_ip = license_master_node['ipaddress']
     end
 

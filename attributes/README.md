@@ -59,6 +59,8 @@ default
 	- File location: files/default/ssl
 
 * `node['splunk']['license_path']` - The path to Splunk License to be added to server (optional).
+* `node['splunk']['license_master']` - The IP of the dedicated license master
+* `node['splunk']['is_license_master']` - Designate node as dedicated license master (will ignore license_master attribute if any)
 
 * `node['splunk']['deploy_dashboards']` - Toggles deploying dashboards or not
 * `node['splunk']['dashboards_to_deploy']` - An array of xml dashboards to copy over. These are the filenames minus the .xml suffix.
@@ -86,9 +88,7 @@ default
 
 distributed_search
 ------------------
-* `node['splunk']['distributed_search']` - Enable/Disable distributed search
-* `node['splunk']['distributed_license_master']` - The local IP of the License Master
-* `node['splunk']['is_dedicated_license_master']` - Designates as dedicated license master - will ignore above IP attribute
+* `node['splunk']['distributed_search']` - Enable/Disable distributed search. Caution: Cannot turn on both distributed_search and cluster_deployment since search heads & indexers are deployed very differently when they are part of a cluster.
 
 clustering
 ----------

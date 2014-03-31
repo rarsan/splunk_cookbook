@@ -1,11 +1,11 @@
 # Name of the cookbook (referenced in forwarder.rb)
 default['splunk']['cookbook_name']             = "splunk"
 
-#directories
+# Directories
 default['splunk']['server_home']               = "/opt/splunk"
 default['splunk']['db_directory']              = "/volr/splunk"
 
-#web config
+# Web config
 default['splunk']['web_server_port']           = "80" # Change to 443/other if you're doing ssl
 default['splunk']['mgmt_server_port']          = "8089"
 default['splunk']['root_endpoint']             = "/" # Web Endpoint
@@ -17,8 +17,12 @@ default['splunk']['use_ssl']                   = false
 default['splunk']['ssl_crt']                   = "ssl.crt"
 default['splunk']['ssl_key']                   = "ssl.key"
 
-#license path
+# License path
 default['splunk']['license_path']              = ""
+# The IP of the dedicated license master
+default['splunk']['license_master']            = ""
+# Designate node as dedicated license master (will ignore license_master attribute if any)
+default['splunk']['is_license_master']         = false
 
 # Dashboards to deploy
 default['splunk']['deploy_dashboards']         = true
