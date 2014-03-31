@@ -81,6 +81,8 @@ else
   role_name = ""
   if node['splunk']['distributed_search'] == true
     role_name = node['splunk']['indexer_role']
+  elsif node['splunk']['cluster_deployment'] == true
+    role_name = node['splunk']['cluster_indexer_role']
   else
     role_name = node['splunk']['server_role']
   end

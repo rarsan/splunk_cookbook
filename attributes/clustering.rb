@@ -1,6 +1,6 @@
 # Clustering
 # See http://docs.splunk.com/Documentation/Splunk/latest/Indexer/Aboutclusters
-default['splunk']['cluster_deployment']  = true
+default['splunk']['cluster_deployment']  = false
 
 # Clustering replication factor
 default['splunk']['replication_factor']  = 3
