@@ -26,10 +26,9 @@ end
 dedicated_search_head = true
 # Only true if we are a dedicated indexer AND are doing a distributed search setup
 dedicated_indexer = false
-# True only if our public ip matches what we set the master to be
-# or if we manually set dedicated_search_master to loopback ip address
-search_master = ((node['splunk']['dedicated_search_master'] == node['ipaddress']) ||
-                (node['splunk']['dedicated_search_master'] == '127.0.0.1')) ? true : false
+# True if our public ip matches what we set the license master to be or if specifically designated as such
+license_master = ( node['splunk']['dedicated_license_master'] == node['ipaddress'] ||
+                   node['splunk']['is_dedicated_license_master']  == true ) ? true : false
 
 splunk_cmd = "#{node['splunk']['server_home']}/bin/splunk"
 splunk_package_version = "splunk-#{node['splunk']['server_version']}-#{node['splunk']['server_build']}"

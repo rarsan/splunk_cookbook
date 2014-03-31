@@ -4,4 +4,7 @@
 default['splunk']['distributed_search']          = false
 
 # The IP of the dedicated search master
-default['splunk']['dedicated_search_master']     = "10.1.1.2"
+default['splunk']['dedicated_license_master']    = ""
+
+# Designate node as dedicated license master - will ignore above IP attribute
+default['splunk']['is_dedicated_license_master'] = false

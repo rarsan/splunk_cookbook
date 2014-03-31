@@ -58,6 +58,8 @@ default
 * `node['splunk']['ssl_key']` - The private key file if you are using the SSL web frontend.
 	- File location: files/default/ssl
 
+* `node['splunk']['license_path']` - The path to Splunk License to be added to server (optional).
+
 * `node['splunk']['deploy_dashboards']` - Toggles deploying dashboards or not
 * `node['splunk']['dashboards_to_deploy']` - An array of xml dashboards to copy over. These are the filenames minus the .xml suffix.
 	- File location: files/default/dashboards
@@ -82,7 +84,8 @@ default
 distributed_search
 ------------------
 * `node['splunk']['distributed_search']` - Enable/Disable distributed search
-* `node['splunk']['distributed_search_master']` - The local IP of the License Master
+* `node['splunk']['distributed_license_master']` - The local IP of the License Master
+* `node['splunk']['is_dedicated_license_master']` - Designates as dedicated license master - will ignore above IP attribute
 
 forwarder
 ---------
