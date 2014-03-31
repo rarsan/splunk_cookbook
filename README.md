@@ -17,7 +17,7 @@ Changes
 * v0.0.7 -
   - Broke up the attributes into separate files.  This will be needed as we add a lot of features to this cookbook
   - Redesigned how splunk starts -- fixed accept-license / answer-yes problems when starting splunk for the first time with version 5.
-  - Added SSL Forwarding as an option.  See attributes/README.md under the forwarder.rb section.
+  - Added SSL Forwarding as an option.  See [attributes/README.md](attributes/README.md) under the forwarder.rb section.
     - With splunk having a unique secret per install, you may see a couple of splunk restarts while saves the encrypted passwords.  When you deploy a regular password (e.g., splunk), splunk will encrypt that regular password on service start and replace it in the config file.  On the next run, chef will read that encrypted password and save it for future runs, but may restart splunk because checksums will not match.
     - If you ever completely remove splunk and then install splunk, you will have to destroy two attributes on the nodes because the splunk.secret will be different.  We can solve this in the future releases.  The attributes are:
       node['splunk']['inputsSSLPass']
@@ -186,8 +186,8 @@ This implementation will be a 1-n Search Head/Indexer setup.  Future versions wi
 
 ## Setup:
 
-1. Override `node['splunk']['distributed_search']` to true
-2. Override `node['splunk']['distributed_search_master']` to the local IP of the master license server.
+1. Override `node['splunk']['distributed_search']` to true.
+2. Override `node['splunk']['license_master']` to the local IP of the master license server.
 3. Set the search head role to the value of `node['splunk']['server_role']`
 4. Set the search indexer role to the value of `node['splunk']['indexer_role']`
 5. Run Chef on the Search Head -- This will save the instance's `ServerName` and `trusted.pem` contents as an attributeto the chef server.
@@ -195,6 +195,25 @@ This implementation will be a 1-n Search Head/Indexer setup.  Future versions wi
 7. Run Chef on the Search Head -- This will modify the `distsearch.conf` to point to the indexer.
 
 A lot of steps?  Perhaps, but if it's running as a service you can technically do steps 1-4 and let the service runs do 5-7.  It just may take a little longer depending on how often chef runs.
+
+Cluster Setup
+=============
+
+Splunk Cluster configuration is commonly used to achieve data availability and recovery via index replication. Cluster setup is not complex, but it is different from Distributed Search in many ways. For more info, refer to:
+http://docs.splunk.com/Documentation/Splunk/latest/Indexer/Aboutclusters
+
+## Setup:
+
+1. Override `node['splunk']['cluster_deployment']` to true.
+2. Override `node['splunk']['replication_factor']` , `node['splunk']['search_factor]` to your desired cluster replication and search factors respectively.
+3. Set the cluster master role to the value of `node['splunk']['cluster_master_role']`
+4. Set the cluster search head role to the value of `node['splunk']['cluster_search_role']`
+5. Set the cluster peer node role to the value of `node['splunk']['cluster_indexer_role']`
+6. Run Chef on the Cluster Master -- Chef server will keep track of this instance `ipaddress` and create appropriate clustering stanza in `server.conf`.
+7. Run Chef on the Cluster Search Head -- This will create appropriate clustering stanza in `server.conf` and point to cluster master.
+8. Run Chef on the Cluster Peer(s) -- This will create appropriate clustering stanza in `server.conf` and point to cluster master and set correct indexer replication port.
+
+As with the case of Distributed Search setup, steps 1-5 can be done once, and steps 6-8 can be automated with chef runs.
 
 License and Author
 ==================
