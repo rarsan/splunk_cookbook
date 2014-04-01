@@ -10,7 +10,7 @@ replication_factor = <%= node['splunk']['replication_factor'] %>
 search_factor = <%= node['splunk']['search_factor'] %>
 <% else -%>
 master_uri = <%= "https://#{@cluster_master_node['ipaddress']}:#{@cluster_master_node['splunk']['mgmt_server_port']}" %>
-mode = <%= (@cluster_peer) ? 'peer' : 'searchhead' %>
+mode = <%= (@cluster_peer) ? 'slave' : 'searchhead' %>
 <% end -%>
 pass4SymmKey = <%= node['splunk']['pass4SymmKey'] %>
 

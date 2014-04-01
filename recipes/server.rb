@@ -117,9 +117,9 @@ if node['splunk']['cluster_deployment'] == true
     cluster_master_node = search(:node, "role:#{node['splunk']['cluster_master_role']}")
     if cluster_master_node.kind_of? Array
       cluster_master_node = cluster_master_node.last
-      if cluster_master_node
-        Chef::Log.info("Found clustering master: #{cluster_master_node['ipaddress']}")
-      end
+    end
+    if cluster_master_node
+      Chef::Log.info("Found clustering master: #{cluster_master_node['ipaddress']}")
     end
   end
 end
@@ -339,8 +339,13 @@ if node['splunk']['cluster_deployment'] == true || node['splunk']['distributed_s
     if node['splunk']['license_master'] != ''
       license_master_ip = node['splunk']['license_master']
     else
-      license_master_node = search(:node, "is_license_master:true").first
-      license_master_ip = license_master_node['ipaddress']
+      license_master_node = search(:node, "is_license_master:true")
+      if license_master_node.kind_of? Array
+        license_master_node = license_master_node.first
+      end
+      if license_master_node
+        license_master_ip = license_master_node['ipaddress']
+      end
     end
 
     if license_master_ip != ''
