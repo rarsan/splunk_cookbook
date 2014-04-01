@@ -17,8 +17,4 @@ rootCA = <%= node['splunk']['server_home']%>/etc/auth/forwarders/<%= node['splun
 serverCert = <%= node['splunk']['server_home']%>/etc/auth/forwarders/<%= node['splunk']['ssl_forwarding_servercert'] %>
 
 [splunktcp-ssl:9997]
-compressed = true
-<% else -%>
-[splunktcp:9997]
-compressed = true
 <% end -%>
