@@ -12,3 +12,7 @@ default['splunk']['pass4SymmKey']        = "password"
 
 # Peer replication port
 default['splunk']['replication_port']    = "9887"
+
+# Cluster master reference - used with Chef solo
+default['splunk']['cluster_master_host'] = ""
+default['splunk']['cluster_master_port'] = "8089"

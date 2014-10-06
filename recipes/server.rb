@@ -22,20 +22,16 @@ service "splunk" do
   supports  :status => true, :start => true, :stop => true, :restart => true
 end
 
-# True for both a standalone install OR dedicated search head for distributed search
+# True for both a standalone install OR dedicated search head in distributed search setup
 dedicated_search_head = true
-# Only true if we are a dedicated indexer AND are doing a distributed search setup
+# True for a dedicated indexer in distributed search setup
 dedicated_indexer = false
-# Only true if we are a cluster search head AND are doing a cluster setup
+# True for a cluster search head in cluster setup
 cluster_search_head = false
-# Only true if we are a cluster master AND are doing a cluster setup
+# True for a cluster master in cluster setup
 cluster_master = false
-# Only true if we are a cluster peer node AND are doing a cluster setup
+# True for a cluster peer node in cluster setup
 cluster_peer = false
-
-# True if our public ip matches what we set the license master to be or if specifically designated as such
-license_master = ( node['splunk']['license_master'] == node['ipaddress'] ||
-                   node['splunk']['is_license_master']  == true ) ? true : false
 
 splunk_cmd = "#{node['splunk']['server_home']}/bin/splunk"
 splunk_package_version = "splunk-#{node['splunk']['server_version']}-#{node['splunk']['server_build']}"
@@ -97,30 +93,42 @@ if node['splunk']['distributed_search'] == true
 end
 
 if node['splunk']['cluster_deployment'] == true
-  if Chef::Config[:solo]
-    Chef::Log.warn("This recipe uses search. Chef Solo does not support search.")
+  # Disable dedicated search head which is the default
+  dedicated_search_head = false
+
+  # Deduce cluster node type from run list
+  cluster_search_head = node.run_list.include?("role[#{node['splunk']['cluster_search_role']}]")
+  cluster_peer = node.run_list.include?("role[#{node['splunk']['cluster_indexer_role']}]")
+  cluster_master = node.run_list.include?("role[#{node['splunk']['cluster_master_role']}]")
+
+  clustering_mode = cluster_master ? 'master' : (cluster_peer ? 'peer' : 'search-head')
+  Chef::Log.info("Current node clustering mode: #{clustering_mode}")
+
+  # Add Server Config template
+  #node.normal['splunk']['static_server_configs'] << "server"
+
+  if cluster_master
+    cluster_master_node = node
   else
-    # Disable dedicated search head which is the default
-    dedicated_search_head = false
-
-    # Only one of the following must be true if we are a cluster-related node
-    cluster_search_head = node.run_list.include?("role[#{node['splunk']['cluster_search_role']}]")
-    cluster_peer = node.run_list.include?("role[#{node['splunk']['cluster_indexer_role']}]")
-    cluster_master = node.run_list.include?("role[#{node['splunk']['cluster_master_role']}]")
-
-    clustering_mode = cluster_master ? 'master' : (cluster_peer ? 'peer' : 'search-head')
-    Chef::Log.info("Current node clustering mode: #{clustering_mode}")
-
-    # Add Server Config template
-    #node.normal['splunk']['static_server_configs'] << "server"
-
-    cluster_master_node = search(:node, "role:#{node['splunk']['cluster_master_role']}")
-    if cluster_master_node.kind_of? Array
-      cluster_master_node = cluster_master_node.last
+    # Identity cluster master node
+    if Chef::Config[:solo]
+      # Create in-memory node hash with locally available information
+      cluster_master_node = {
+        'ipaddress' => node['splunk']['cluster_master_host'],
+        'splunk' => {
+          'mgmt_server_port' => node['splunk']['cluster_master_port'] || 8089
+        }
+      }
+    else
+      # Retrieve node from Chef server
+      cluster_master_node = search(:node, "role:#{node['splunk']['cluster_master_role']}")
+      if cluster_master_node.kind_of? Array
+        cluster_master_node = cluster_master_node.last
+      end
     end
-    if cluster_master_node
-      Chef::Log.info("Found clustering master: #{cluster_master_node['ipaddress']}")
-    end
+  end
+  if cluster_master_node
+    Chef::Log.info("Found clustering master: #{cluster_master_node['ipaddress']}")
   end
 end
 
@@ -333,25 +341,29 @@ end
 
 # Link to license master (if any) in distributed environment
 if node['splunk']['cluster_deployment'] == true || node['splunk']['distributed_search'] == true
+  # We are license master if our private ip matches what we set
+  # the license master to be or if specifically designated as such
+  license_master = node['splunk']['is_license_master'] || (node['splunk']['license_master_host'] == node['ipaddress'])
+
   # We are not the license master.. we need to link up to the master for our license information
   if license_master == false
     license_master_ip = ''
-    if node['splunk']['license_master'] != ''
-      license_master_ip = node['splunk']['license_master']
-    else
+    if node['splunk']['license_master_host'] != ''
+      license_master_host = node['splunk']['license_master_host']
+    elsif not Chef::Config[:solo]
       license_master_node = search(:node, "is_license_master:true")
       if license_master_node.kind_of? Array
         license_master_node = license_master_node.first
       end
       if license_master_node
-        license_master_ip = license_master_node['ipaddress']
+        license_master_host = license_master_node['ipaddress']
       end
     end
 
-    if license_master_ip != ''
-      Chef::Log.info("Link up with license master: #{license_master_ip}")
+    if license_master_host != ''
+      Chef::Log.info("Link up with license master: #{license_master_host}")
       execute "Linking splunk license to license master" do
-        command "#{splunk_cmd} edit licenser-localslave -master_uri 'https://#{license_master_ip}:8089' -auth #{node['splunk']['auth']}"
+        command "#{splunk_cmd} edit licenser-localslave -master_uri 'https://#{license_master_host}:8089' -auth #{node['splunk']['auth']}"
         retries 5
         ignore_failure true
         notifies :restart, resources(:service => "splunk")

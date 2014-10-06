@@ -19,9 +19,9 @@ default['splunk']['ssl_key']                   = "ssl.key"
 
 # License path
 default['splunk']['license_path']              = ""
-# The IP of the dedicated license master
-default['splunk']['license_master']            = ""
-# Designate node as dedicated license master (will ignore license_master attribute if any)
+# Address of the dedicated license master
+default['splunk']['license_master_host']       = ""
+# Designate node as dedicated license master (will ignore license_master_host attribute if any)
 default['splunk']['is_license_master']         = false
 
 # Dashboards to deploy
