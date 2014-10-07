@@ -17,6 +17,8 @@ default['splunk']['use_ssl']                   = false
 default['splunk']['ssl_crt']                   = "ssl.crt"
 default['splunk']['ssl_key']                   = "ssl.key"
 
+default['splunk']['server_name']               = ""
+
 # License path
 default['splunk']['license_path']              = ""
 # Address of the dedicated license master

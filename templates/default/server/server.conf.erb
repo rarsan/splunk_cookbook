@@ -1,5 +1,5 @@
 [general]
-serverName = <%= node['ipaddress'] %>
+serverName = <%= node['splunk']['server_name'] || node['ipaddress'] %>
 allowRemoteLogin = always
 
 <% if @cluster_search_head || @cluster_master || @cluster_peer -%>
