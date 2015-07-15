@@ -218,10 +218,12 @@ end
 
 # Change password
 splunk_password = node['splunk']['auth'].split(':')[1]
-execute "Changing Admin Password" do
-  command "#{splunk_cmd} edit user admin -password #{splunk_password} -roles admin -auth admin:changeme && echo true > /opt/splunk_setup_passwd"
-  not_if do
-    File.exists?("/opt/splunk_setup_passwd")
+if splunk_password != "changeme"
+  execute "Changing Admin Password" do
+    command "#{splunk_cmd} edit user admin -password #{splunk_password} -roles admin -auth admin:changeme && echo true > /opt/splunk_setup_passwd"
+    not_if do
+      File.exists?("/opt/splunk_setup_passwd")
+    end
   end
 end
 

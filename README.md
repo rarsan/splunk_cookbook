@@ -6,15 +6,18 @@ This Chef cookbook provides recipes for installing Splunk Server, Splunk Forward
 Changes
 =======
 
-* v0.1.1 -
+* v0.1.2
+  - Updated to Splunk 6.2.4
+* v0.1.1
   - Added Cluster configuration. See attributes/clustering.rb
   - Updated to Splunk 6.0
-* v0.1.0 - Added index configuration.  See attributes/indexes.rb
-* v0.0.9 -
+* v0.1.0
+  - Added index configuration.  See attributes/indexes.rb
+* v0.0.9
     - Added Distributed Searching.  This requires an Enterprise License with the CanBeRemoteMaster / DistSearch Feature Flags.  See the Distributed Search section for more details.
-* v0.0.8 -
-  - Added scripted authentication logic.  We use an external SSO system for logins.  Splunk's scripted authentication allows us to write custom scripts to interact with that SSO system to facilitate authentication.  See http://docs.splunk.com/Documentation/Splunk/5.0.1/Security/ConfigureSplunkToUsePAMOrRADIUSAuthentication for more information.
-* v0.0.7 -
+* v0.0.8
+  - Added scripted authentication logic.  We use an external SSO system for logins.  Splunk's scripted authentication allows us to write custom scripts to interact with that SSO system to facilitate authentication.  See http://docs.splunk.com/Documentation/Splunk/latest/Security/ConfigureSplunkToUsePAMOrRADIUSAuthentication for more information.
+* v0.0.7
   - Broke up the attributes into separate files.  This will be needed as we add a lot of features to this cookbook
   - Redesigned how splunk starts -- fixed accept-license / answer-yes problems when starting splunk for the first time with version 5.
   - Added SSL Forwarding as an option.  See [attributes/README.md](attributes/README.md) under the forwarder.rb section.
@@ -24,10 +27,14 @@ Changes
       node['splunk']['outputsSSLPass']
   - Removed default['splunk']['indexer_name'] in attributes/default.rb. 
   - Got rid of the annoying output on the multiple "moving inputs file" for the forwarders.  It should now only do it once.
-* v0.0.4 - Added a splunk app: Pulse for AWS Cloudwatch.  This app will pull back metrics from AWS Cloudwatch and provides sample dashboards to display the information.  Read the SETUP.txt located in the root directory of the app file for installation requirements.
-* v0.0.3 - Changing version of Splunk to 4.3
-* v0.0.2 - Revamp
-* v0.0.1 - Initial Release
+* v0.0.4
+  - Added a splunk app: Pulse for AWS Cloudwatch.  This app will pull back metrics from AWS Cloudwatch and provides sample dashboards to display the information.  Read the SETUP.txt located in the root directory of the app file for installation requirements.
+* v0.0.3
+  - Changing version of Splunk to 4.3
+* v0.0.2
+  - Revamp
+* v0.0.1
+  - Initial Release
 
 Current Bugs
 ============
